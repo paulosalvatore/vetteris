@@ -46,11 +46,9 @@
 		<item id="2568" chance="18000"/><!-- 18% cleaver -->
 		<item id="1987" chance="100000"><!-- bag -->
 			<!--inside-->
-				<!--<item id="2185" chance="1000"/> 1% volcanic rod -->
 				<item id="2387" chance="3000"/><!-- 3% double axe -->
 				<item id="2419" chance="12000"/><!-- 12% scimitar -->
 				<item id="2515" chance="300"/><!-- 0.2% guardian shield -->
-				<item id="2191" chance="300"/><!-- 0.3% red spell wand -->
 				<item id="2050" chance="1000"/><!-- 30% torch -->
 			<!--/inside-->
 		</item>
