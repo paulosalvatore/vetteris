@@ -1,5 +1,10 @@
 dofile('data/lib/lib.lua')
 
+itensMovimentoDesativado = {
+	2500, -- Uso Geral
+	2503 -- Uso Geral
+}
+
 STORAGEVALUE_PROMOTION = 30018
 
 ropeSpots = {384, 418, 8278, 8592, 13189, 14435, 14436, 15635, 19518}

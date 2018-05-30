@@ -3,7 +3,9 @@ function Player:onBrowseField(position)
 end
 
 function Player:onLook(thing, position, distance)
-	local description = "You see " .. thing:getDescription(distance)
+	local utf8 = require("data/lib/utf8")
+	local description = utf8.convert("You see " .. thing:getDescription(distance))
+
 	if self:getGroup():getAccess() then
 		if thing:isItem() then
 			description = string.format("%s\nItem ID: %d", description, thing:getId())
@@ -23,14 +25,14 @@ function Player:onLook(thing, position, distance)
 			local transformEquipId = itemType:getTransformEquipId()
 			local transformDeEquipId = itemType:getTransformDeEquipId()
 			if transformEquipId ~= 0 then
-				description = string.format("%s\nTransforms to: %d (onEquip)", description, transformEquipId)
+				description = string.format("%s\nTransforms to: %d (onEquip).", description, transformEquipId)
 			elseif transformDeEquipId ~= 0 then
-				description = string.format("%s\nTransforms to: %d (onDeEquip)", description, transformDeEquipId)
+				description = string.format("%s\nTransforms to: %d (onDeEquip).", description, transformDeEquipId)
 			end
 
 			local decayId = itemType:getDecayId()
 			if decayId ~= -1 then
-				description = string.format("%s\nDecays to: %d", description, decayId)
+				description = string.format("%s\nDecay to: %d", description, decayId)
 			end
 		elseif thing:isCreature() then
 			local str = "%s\nHealth: %d / %d"
@@ -42,7 +44,7 @@ function Player:onLook(thing, position, distance)
 
 		local position = thing:getPosition()
 		description = string.format(
-			"%s\nPosition: %d, %d, %d",
+			"%s\nPosition: %d, %d, %d.",
 			description, position.x, position.y, position.z
 		)
 
@@ -66,12 +68,12 @@ function Player:onLookInBattleList(creature, distance)
 
 		local position = creature:getPosition()
 		description = string.format(
-			"%s\nPosition: %d, %d, %d",
+			"%s\nPosition: %d, %d, %d.",
 			description, position.x, position.y, position.z
 		)
 
 		if creature:isPlayer() then
-			description = string.format("%s\nIP: %s", description, Game.convertIpToString(creature:getIp()))
+			description = string.format("%s\nIP: %s.", description, Game.convertIpToString(creature:getIp()))
 		end
 	end
 	self:sendTextMessage(MESSAGE_INFO_DESCR, description)
@@ -86,6 +88,79 @@ function Player:onLookInShop(itemType, count)
 end
 
 function Player:onMoveItem(item, count, fromPosition, toPosition, fromCylinder, toCylinder)
+	local tile = Tile(toPosition)
+
+	if tile and tile:getHouse() ~= nil then
+		if tile:getItemCount() == 9 then
+			self:sendCancelMessage("You can't add more items to this tile.")
+
+			return false
+		else
+			local peso = item:getWeight()
+			local pesoMaximo = 1500000
+			local itens = tile:getItems()
+
+			if itens then
+				for i = 1, #itens do
+					peso = peso + itens[i]:getWeight()
+				end
+			end
+
+			if peso > pesoMaximo then
+				self:sendCancelMessage("You can't add more items to this tile.")
+
+				return false
+			end
+		end
+	end
+
+	local verificarItem = false
+	if isInArray(itensMovimentoDesativado, item:getActionId()) then
+		verificarItem = true
+	elseif item:isContainer() then
+		for k, actionId in pairs(itensMovimentoDesativado) do
+			if #item:getAllItemsByAction(false, actionId) > 0 then
+				verificarItem = true
+			end
+		end
+	end
+
+	local movimentoBloqueado = false
+	if verificarItem then
+		movimentoBloqueado = true
+		if fromPosition.x == CONTAINER_POSITION and toPosition.x == CONTAINER_POSITION then
+			if toCylinder:isItem() then
+				if item:getTopParent() == toCylinder:getTopParent() then
+					movimentoBloqueado = false
+				end
+			end
+		end
+	end
+
+	if toPosition.x == CONTAINER_POSITION then
+		local containerId = toPosition.y - 64
+		local container = self:getContainerById(containerId)
+		if not container then
+			return true
+		end
+
+		local tile = Tile(container:getPosition())
+		for _, item in ipairs(tile:getItems()) do
+			if item:getAttribute(ITEM_ATTRIBUTE_CORPSEOWNER) == 2^31 - 1 and item:getName() == container:getName() then
+				movimentoBloqueado = true
+			end
+		end
+	end
+
+	if item:getAttribute(ITEM_ATTRIBUTE_CORPSEOWNER) == 2^31 - 1 then
+		movimentoBloqueado = true
+	end
+
+	if movimentoBloqueado then
+		self:sendCancelMessage("You can't move this item.")
+		return false
+	end
+
 	if toPosition.x ~= CONTAINER_POSITION then
 		return true
 	end
@@ -111,8 +186,6 @@ function Player:onMoveItem(item, count, fromPosition, toPosition, fromCylinder, 
 			end
 		end
 	end
-
-	return true
 end
 
 function Player:onMoveCreature(creature, fromPosition, toPosition)
@@ -187,10 +260,34 @@ function Player:onReportBug(message, position, category)
 end
 
 function Player:onTurn(direction)
+	if self:getDirection() == direction and self:getGroup():getAccess() then
+
+		local nextPosition = self:getPosition()
+
+		nextPosition:getNextPosition(direction)
+
+		self:teleportTo(nextPosition, true)
+	end
+
 	return true
 end
 
 function Player:onTradeRequest(target, item)
+	if item:isContainer() then
+		for k, actionId in pairs(itensMovimentoDesativado) do
+			verificarItens = item:getAllItemsByAction(false, actionId)
+			if #verificarItens > 0 then
+				self:sendCancelMessage("You can't trade this item.")
+				return false
+			end
+		end
+	end
+
+	if isInArray(itensMovimentoDesativado, item:getActionId()) then
+		self:sendCancelMessage("You can't trade this item.")
+		return false
+	end
+
 	return true
 end
 
@@ -204,6 +301,7 @@ soulCondition:setParameter(CONDITION_PARAM_SOULGAIN, 1)
 
 local function useStamina(player)
 	local staminaMinutes = player:getStamina()
+
 	if staminaMinutes == 0 then
 		return
 	end
@@ -211,6 +309,7 @@ local function useStamina(player)
 	local playerId = player:getId()
 	local currentTime = os.time()
 	local timePassed = currentTime - nextUseStaminaTime[playerId]
+
 	if timePassed <= 0 then
 		return
 	end
@@ -226,6 +325,7 @@ local function useStamina(player)
 		staminaMinutes = staminaMinutes - 1
 		nextUseStaminaTime[playerId] = currentTime + 60
 	end
+
 	player:setStamina(staminaMinutes)
 end
 
@@ -236,6 +336,7 @@ function Player:onGainExperience(source, exp, rawExp)
 
 	-- Soul regeneration
 	local vocation = self:getVocation()
+
 	if self:getSoul() < vocation:getMaxSoul() and exp >= self:getLevel() then
 		soulCondition:setParameter(CONDITION_PARAM_SOULTICKS, vocation:getSoulGainTicks() * 1000)
 		self:addCondition(soulCondition)
@@ -249,6 +350,7 @@ function Player:onGainExperience(source, exp, rawExp)
 		useStamina(self)
 
 		local staminaMinutes = self:getStamina()
+
 		if staminaMinutes > 2400 and self:isPremium() then
 			exp = exp * 1.5
 		elseif staminaMinutes <= 840 then
@@ -271,5 +373,6 @@ function Player:onGainSkillTries(skill, tries)
 	if skill == SKILL_MAGLEVEL then
 		return tries * configManager.getNumber(configKeys.RATE_MAGIC)
 	end
+
 	return tries * configManager.getNumber(configKeys.RATE_SKILL)
 end
