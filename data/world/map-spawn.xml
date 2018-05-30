@@ -220,6 +220,12 @@
 	<spawn centerx="544" centery="911" centerz="7" radius="1">
 		<monster name="orc" x="-1" y="0" z="7" spawntime="120" />
 	</spawn>
+	<spawn centerx="597" centery="949" centerz="7" radius="1">
+		<npc name="Phaos Thourasa" x="0" y="1" z="7" spawntime="60" />
+	</spawn>
+	<spawn centerx="581" centery="953" centerz="7" radius="1">
+		<npc name="James" x="0" y="-1" z="7" spawntime="60" />
+	</spawn>
 	<spawn centerx="560" centery="964" centerz="7" radius="1">
 		<monster name="rabbit" x="1" y="1" z="7" spawntime="60" />
 	</spawn>
