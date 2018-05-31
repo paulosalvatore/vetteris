@@ -34,9 +34,9 @@
 	<talkaction words="/hide" script="hide.lua" />
 	<talkaction words="/reload" separator=" " script="reload.lua" />
 	<talkaction words="/raid" separator=" " script="force_raid.lua" />
-	<talkaction words="/verificar_itens_sem_nome" separator=" " script="verificar_itens_sem_nome.lua" />
 
 	<!-- player talkactions -->
+	<!--
 	<talkaction words="!buypremium" script="buyprem.lua" />
 	<talkaction words="!buyhouse" script="buyhouse.lua" />
 	<talkaction words="!sellhouse" separator=" " script="sellhouse.lua" />
@@ -47,8 +47,16 @@
 	<talkaction words="!kills" script="kills.lua" />
 	<talkaction words="!online" script="online.lua" />
 	<talkaction words="!serverinfo" script="serverinfo.lua" />
+	-->
 
 	<!-- test talkactions -->
-	<talkaction words="!z" separator=" " script="magiceffect.lua" />
-	<talkaction words="!x" separator=" " script="animationeffect.lua" />
+	<talkaction words="/z" separator=" " script="magiceffect.lua" />
+	<talkaction words="/x" separator=" " script="animationeffect.lua" />
+
+	<!-- custom talkactions -->
+	<talkaction words="/itemnoname" separator=" " script="verificar_itens_sem_nome.lua" />
+	<talkaction words="/testloot" separator=" " script="test_loot.lua" />
+	<talkaction words="/addhp" separator=" " script="add_health.lua" />
+	<talkaction words="/online" script="online.lua" />
+	<talkaction words="/loadminimap" script="load_minimap.lua" />
 </talkactions>
